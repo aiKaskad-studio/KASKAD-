@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#06060a">
+<title>KASKAD — Professional AI Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="hdr">
+  <div class="logo-wrap">
+    <svg class="k-logo" viewBox="0 0 46 46"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0d078"/><stop offset="45%" stop-color="#c8a84b"/><stop offset="100%" stop-color="#7a5e18"/></linearGradient></defs>
+    <path d="M7 4 L7 42 L15 42 L15 27 L31 42 L41 42 L22 23 L39 4 L29 4 L15 20 L15 4 Z" fill="none" stroke="url(#kg)" stroke-width="2.5" opacity=".7"/>
+    <path d="M7 4 L7 42 L15 42 L15 27 L31 42 L41 42 L22 23 L39 4 L29 4 L15 20 L15 4 Z" fill="#08080f"/>
+    <path d="M7 4 L7 42 L15 42 L15 27 L31 42 L41 42 L22 23 L39 4 L29 4 L15 20 L15 4 Z" fill="none" stroke="url(#kg)" stroke-width="1.4"/>
+    </svg>
+    <div class="logo-text"><div class="logo-name">KASKAD</div><div class="logo-tagline">PROFESSIONAL AI STUDIO</div></div>
+  </div>
+  <div class="hdr-right"><div class="status-dot-row"><div class="dot"></div><span id="statusTxt">READY</span></div></div>
+</div>
+
+<div class="nav">
+  <button class="nb on" data-tab="stems"><span class="nb-ic">🎵</span>STEMS</button>
+  <button class="nb" data-tab="clean"><span class="nb-ic">✨</span>ОЧИСТКА</button>
+  <button class="nb" data-tab="mixer"><span class="nb-ic">🔊</span>СВЕДЕНИЕ</button>
+  <button class="nb" data-tab="master"><span class="nb-ic">🎯</span>МАСТЕР</button>
+  <button class="nb" data-tab="clip"><span class="nb-ic">🎬</span>КЛИП</button>
+  <button class="nb" data-tab="midi"><span class="nb-ic">🎹</span>MIDI</button>
+  <button class="nb" data-tab="project"><span class="nb-ic">💾</span>ПРОЕКТ</button>
+</div>
+
+<div class="main">
+  <!-- STEMS -->
+  <div class="panel on" id="panel-stems">
+    <div class="slbl">Загрузить исходный трек</div>
+    <div class="drop-zone" id="dz"><input type="file" id="fi" accept="audio/*"><div class="dz-icon">🎵</div><div class="dz-title">Нажми или перетащи</div><div class="dz-sub">MP3 · WAV · до 100 МБ</div></div>
+    <div class="fchip" id="fchip" style="display:none"><div class="fchip-ic">🎧</div><div><div class="fchip-name" id="fname">—</div><div class="fchip-sz" id="fsz">—</div></div><button class="fchip-rm" id="clearTrackBtn">✕</button></div>
+    <div class="slbl" style="margin-top:12px">Дорожки проекта</div>
+    <div id="stemList"></div>
+    <button class="btn secondary" id="addStemBtn">📁 Добавить файлы вручную</button>
+    <input type="file" id="mulFi" accept="audio/*" style="display:none">
+    
+    <div class="mplayer" id="mixPlayer" style="display:none;margin-top:12px;border-color:var(--gold)">
+      <div class="mpl-lbl" style="color:var(--gold)">▶ ОБЩИЙ МИКС</div>
+      <div class="mpl-row">        <button class="pbtn on" id="mixPlayBtn" style="background:var(--gold);color:var(--bg)">▶</button>
+        <button class="pbtn" id="mixStopBtn" style="background:rgba(200,168,75,.1);border-color:var(--red);color:var(--red)">⏹️</button>
+        <div class="seek-wrap"><div class="seek-track" id="mixSeek"><div class="seek-fill" id="mixFill" style="background:var(--gold)"></div><div class="seek-thumb" id="mixThumb"></div></div>
+        <div class="time-row"><span id="mixCur">0:00</span><span id="mixDur">0:00</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLEAN -->
+  <div class="panel" id="panel-clean">
+    <div class="slbl">🧹 DSP Очистка звука</div>
+    <div class="info-box">Загрузи дорожку для очистки от гула и шума через Web Audio API (работает локально).</div>
+    <div class="drop-zone" id="cleanDz"><input type="file" id="cleanFi" accept="audio/*"><div class="dz-title">Перетащи дорожку для очистки</div></div>
+    <div id="cleanTarget" style="display:none;margin-top:12px">
+      <div class="pcard">
+        <div class="pcard-title">🎛️ Цепочка обработки</div>
+        <div class="ctrl-row" style="margin-bottom:8px"><span class="c-lbl" style="width:80px">High-Pass</span><input type="range" min="20" max="200" value="40" id="hpFilter"><span class="c-val" id="hpVal">40Hz</span></div>
+        <div class="ctrl-row" style="margin-bottom:8px"><span class="c-lbl" style="width:80px">Noise Gate</span><input type="range" min="-60" max="0" value="-30" id="gateThresh"><span class="c-val" id="gateVal">-30dB</span></div>
+        <button class="btn" id="applyCleanBtn">✅ Применить DSP очистку</button>
+      </div>
+      <div class="ai-card" style="margin-top:12px">
+        <div class="ai-title">🎧 DeepFilterNet (ИИ)</div>
+        <div class="ai-desc">Профессиональное удаление шума через HuggingFace.</div>
+        <a class="ai-link" href="https://huggingface.co/spaces/hshr/DeepFilterNet2" target="_blank">🔗 Открыть Space</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- СВЕДЕНИЕ (MIXER) -->
+  <div class="panel" id="panel-mixer">
+    <div class="slbl">🔊 Сведение и баланс</div>
+    <div id="mixerList"><div class="empty-box">Загрузи стемы во вкладке STEMS</div></div>
+    
+    <div class="pcard" style="margin-top:12px">
+      <div class="pcard-title">🎚️ Мастер шина</div>
+      <div class="ctrl-row"><span class="c-lbl" style="width:60px">Громкость</span><input type="range" min="0" max="150" value="100" id="masterVol"><span class="c-val" id="mvv">100%</span></div>
+    </div>
+    
+    <button class="btn secondary" id="autoGainBtn" style="margin-top:8px">🪄 Auto-Gain Staging (выровнять пики)</button>
+    <button class="btn solid" id="exportMixBtn">💾 ЭКСПОРТ МИКСА (WAV Стерео)</button>
+  </div>
+
+  <!-- MASTER -->
+  <div class="panel" id="panel-master">
+    <div class="slbl">🎯 Мастеринг</div>
+    <div class="preset-category"><div class="preset-category-title">📡 Стриминг</div><div class="preset-scroll">
+      <div class="preset-mini" data-preset="spotify">Spotify</div><div class="preset-mini" data-preset="apple">Apple</div><div class="preset-mini" data-preset="youtube">YouTube</div>
+    </div></div>
+    <div class="pcard" style="margin-top:10px">
+      <div class="pcard-title">📊 Компрессор</div>      <div class="ctrl-row"><span class="c-lbl">Ratio</span><input type="range" min="1" max="20" value="4" step="0.5" id="compRatio"><span class="c-val" id="compRatioVal">4:1</span></div>
+      <div class="ctrl-row"><span class="c-lbl">Thresh</span><input type="range" min="-40" max="0" value="-18" id="compThresh"><span class="c-val" id="compThreshVal">-18dB</span></div>
+    </div>
+    <div class="pcard">
+      <div class="pcard-title">🎨 Master EQ</div>
+      <div class="eq-grid">
+        <div class="eq-b"><span class="eq-val" id="meq1">0</span><input type="range" min="-12" max="12" value="0" step="0.5" id="meq1s"><span class="eq-lbl">60Hz</span></div>
+        <div class="eq-b"><span class="eq-val" id="meq2">0</span><input type="range" min="-12" max="12" value="0" step="0.5" id="meq2s"><span class="eq-lbl">250Hz</span></div>
+        <div class="eq-b"><span class="eq-val" id="meq3">0</span><input type="range" min="-12" max="12" value="0" step="0.5" id="meq3s"><span class="eq-lbl">1kHz</span></div>
+        <div class="eq-b"><span class="eq-val" id="meq4">0</span><input type="range" min="-12" max="12" value="0" step="0.5" id="meq4s"><span class="eq-lbl">4kHz</span></div>
+        <div class="eq-b"><span class="eq-val" id="meq5">0</span><input type="range" min="-12" max="12" value="0" step="0.5" id="meq5s"><span class="eq-lbl">12kHz</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIP -->
+  <div class="panel" id="panel-clip">
+    <div class="slbl">🎬 Генератор клипа (Хронометраж)</div>
+    <div class="clip-stages">
+      <div class="clip-stage active" data-stage="0"><span class="clip-stage-icon">📝</span>Сценарий</div>
+      <div class="clip-stage" data-stage="1"><span class="clip-stage-icon">🎬</span>Раскадровка</div>
+      <div class="clip-stage" data-stage="2"><span class="clip-stage-icon">🎥</span>Видео</div>
+      <div class="clip-stage" data-stage="3"><span class="clip-stage-icon">✂️</span>Монтаж</div>
+    </div>
+    
+    <div class="stage-panel on" id="stage-0">
+      <div class="pcard">
+        <div class="pcard-title">📝 Генерация сценария</div>
+        <textarea id="lyricsInput" placeholder="Вставь текст песни... ИИ использует его для создания сценария."></textarea>
+        <div class="ctrl-row" style="margin-bottom:8px"><span class="c-lbl" style="width:60px">Стиль</span><select id="scriptStyle"><option value="cinematic">🎬 Кинематографичный</option><option value="anime">🎌 Аниме</option><option value="cyberpunk">🌃 Cyberpunk</option><option value="fantasy">🧙 Фэнтези</option></select></div>
+        <button class="btn solid" id="genScriptBtn">🤖 Сгенерировать сценарий</button>
+      </div>
+      <div id="scriptResult" style="display:none;margin-top:10px">
+        <textarea id="scriptText" style="min-height:200px"></textarea>
+        <button class="btn solid" id="approveScriptBtn">✅ Утвердить</button>
+      </div>
+    </div>
+
+    <div class="stage-panel" id="stage-1">
+      <div class="pcard">
+        <div class="pcard-title">🎬 Расчет хронометража и раскадровка</div>
+        <div class="info-box" id="chronoInfo">⚠️ Загрузи музыку во вкладке STEMS для автоматического расчета.</div>
+        <div class="ctrl-row" style="margin-bottom:8px"><span class="c-lbl" style="width:100px">Секунд/кадр</span><input type="range" min="2" max="5" value="3" step="0.5" id="clipDurCalc"><span class="c-val" id="clipDurCalcVal">3с</span></div>
+        <button class="btn solid" id="genStoryboardBtn">🤖 Создать раскадровку</button>
+      </div>
+      <div id="storyboardList" style="margin-top:10px"></div>
+      <button class="btn secondary" id="addSceneBtn">➕ Добавить сцену</button>
+      <button class="btn solid" id="approveStoryboardBtn" style="margin-top:8px">✅ Утвердить</button>
+    </div>
+    <div class="stage-panel" id="stage-2">
+      <div class="pcard">
+        <div class="pcard-title">🎥 Оживление (Zeroscope / SVD)</div>
+        <div class="info-box">ИИ анимирует каждый кадр. Бесплатный API имеет очереди. Если ошибка 503, подожди 15 сек и нажми "Перегенерировать" на конкретной сцене.</div>
+        <button class="btn solid" id="genAllVideosBtn">🤖 Оживить все сцены</button>
+        <div class="prog-wrap" id="videoProg"><div class="prog-bg"><div class="prog-fill" id="videoFill"></div></div><div class="prog-txt" id="videoTxt">Генерация...</div></div>
+      </div>
+      <div id="videoList" style="margin-top:10px"></div>
+      <button class="btn solid" id="approveVideosBtn" style="margin-top:8px">✅ Утвердить</button>
+    </div>
+
+    <div class="stage-panel" id="stage-3">
+      <div class="pcard">
+        <div class="pcard-title">✂️ Монтаж (FFmpeg.wasm)</div>
+        <div class="info-box">Склейка видео и наложение музыки происходит локально в браузере.</div>
+        <button class="btn solid" id="renderClipBtn">🎬 Рендерить финальный клип</button>
+        <div class="prog-wrap" id="renderProg"><div class="prog-bg"><div class="prog-fill" id="renderFill"></div></div><div class="prog-txt" id="renderTxt">Подготовка...</div></div>
+      </div>
+      <div class="slbl" style="margin-top:12px">📼 Таймлайн</div>
+      <div class="timeline"><div class="timeline-track" id="timelineTrack"></div></div>
+      <div class="video-preview" id="clipPreview"><div style="color:var(--muted);font-family:var(--mono);font-size:10px">Предпросмотр появится после рендера</div></div>
+      <button class="btn solid" id="exportClipBtn">💾 Скачать MP4 клип</button>
+    </div>
+  </div>
+
+  <!-- MIDI -->
+  <div class="panel" id="panel-midi">
+    <div class="slbl">🎹 MIDI Редактор</div>
+    <div class="midi-editor">
+      <div class="ctrl-row" style="margin-bottom:10px;flex-wrap:wrap">
+        <span class="c-lbl">BPM</span><input type="range" min="60" max="180" value="120" id="midiBPM" style="width:100px"><span class="c-val" id="bpmValue">120</span>
+        <select id="midiWaveType" class="settings-input" style="width:120px;margin-left:5px">
+          <option value="sine">🎵 Синус</option><option value="square">🔲 Квадрат</option><option value="sawtooth">📐 Пила</option><option value="triangle">▲ Треугольник</option>
+        </select>
+      </div>
+      <div id="midiGrid" class="midi-grid"></div>
+      <div class="ctrl-row" style="margin-top:10px;gap:5px">
+        <button class="btn small" id="midiPlayBtn">▶ Играть</button>
+        <button class="btn small" id="midiStopBtn">⏹️ Стоп</button>
+        <button class="btn small" id="midiRandBtn">🎲 Случайные</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECT -->
+  <div class="panel" id="panel-project">
+    <div class="slbl">💾 Управление проектом и API</div>
+    <div class="pcard">
+      <div class="pcard-title">🔑 Hugging Face Token</div>
+      <div class="info-box">Необходим для генерации сценария и видео. Токен сохраняется только в твоем браузере.</div>      <input type="password" id="hfTokenInput" placeholder="Вставь свой токен (начинается с hf_...)">
+      <button class="btn small" id="saveTokenBtn">💾 Сохранить токен</button>
+    </div>
+    <div class="ctrl-row" style="gap:5px;margin-top:12px">
+      <button class="btn small" id="saveProjectBtn">💾 Сохранить проект</button>
+      <button class="btn small" id="loadProjectBtn">📂 Загрузить проект</button>
+      <button class="btn small" id="undoBtn">↩️ Отмена</button>
+      <button class="btn small" id="redoBtn">↪️ Повтор</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="js/storage.js"></script>
+<script type="module" src="js/audioEngine.js"></script>
+<script type="module" src="js/midiEngine.js"></script>
+<script type="module" src="js/clipEngine.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
